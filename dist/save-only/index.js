@@ -93861,13 +93861,16 @@ function downloadCache(archiveLocation, archivePath, options) {
         }
         const archiveUrl = new URL(archiveLocation);
         const objectKey = archiveUrl.pathname.slice(1);
+        core.info(`A: ${JSON.stringify({ archiveUrl, objectKey })}`);
         const command = new client_s3_1.GetObjectCommand({
             Bucket: bucketName,
             Key: objectKey
         });
+        core.info(`B`);
         const url = yield getSignedUrl(s3Client, command, {
             expiresIn: 3600
         });
+        core.info(`C`);
         yield (0, downloadUtils_1.downloadCacheHttpClientConcurrent)(url, archivePath, Object.assign(Object.assign({}, options), { downloadConcurrency: downloadQueueSize, concurrentBlobDownloads: true, partSize: downloadPartSize }));
     });
 }
@@ -94312,25 +94315,31 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
             keepAlive: true
         });
         try {
+            core.info("AA");
             const res = yield (0, requestUtils_1.retryHttpClientResponse)("downloadCacheMetadata", () => __awaiter(this, void 0, void 0, function* () {
                 return yield httpClient.request("GET", archiveLocation, null, {
                     Range: "bytes=0-1"
                 });
             }));
+            core.info("BB");
             const contentRange = res.message.headers["content-range"];
             if (!contentRange) {
                 throw new Error("Range request not supported by server");
             }
+            core.info("CC");
             const match = contentRange === null || contentRange === void 0 ? void 0 : contentRange.match(/bytes \d+-\d+\/(\d+)/);
             if (!match) {
                 throw new Error("Content-Range header in server response not in correct format");
             }
+            core.info("DD");
             const length = parseInt(match[1]);
             if (Number.isNaN(length)) {
                 throw new Error(`Could not interpret Content-Length: ${length}`);
             }
+            core.info("EE");
             const downloads = [];
             const blockSize = options.partSize;
+            core.info("FF");
             for (let offset = 0; offset < length; offset += blockSize) {
                 const count = Math.min(blockSize, length - offset);
                 downloads.push({
@@ -94347,6 +94356,7 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
             const progress = new DownloadProgress(length);
             progress.startDisplayTimer();
             const progressFn = progress.onProgress();
+            core.info("GG");
             const activeDownloads = [];
             let nextDownload;
             const waitAndWrite = () => __awaiter(this, void 0, void 0, function* () {
@@ -94357,6 +94367,7 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
                 bytesDownloaded += segment.count;
                 progressFn({ loadedBytes: bytesDownloaded });
             });
+            core.info("HH");
             while ((nextDownload = downloads.pop())) {
                 activeDownloads[nextDownload.offset] = nextDownload.promiseGetter();
                 actives++;
@@ -94364,12 +94375,14 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
                     yield waitAndWrite();
                 }
             }
+            core.info("II");
             while (actives > 0) {
                 yield waitAndWrite();
             }
         }
         finally {
             httpClient.dispose();
+            core.info("JJ");
             yield archiveDescriptor.close();
         }
     });
