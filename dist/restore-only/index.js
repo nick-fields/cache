@@ -94025,29 +94025,38 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
         let archivePath = "";
         try {
             // path are needed to compute version
+            core.info("1");
             const cacheEntry = yield cacheHttpClient.getCacheEntry(keys, paths, {
                 compressionMethod,
                 enableCrossOsArchive
             });
+            core.info("2");
             if (!(cacheEntry === null || cacheEntry === void 0 ? void 0 : cacheEntry.archiveLocation)) {
                 // Cache not found
                 return undefined;
             }
+            core.info("3");
             if (options === null || options === void 0 ? void 0 : options.lookupOnly) {
                 core.info("Lookup only - skipping download");
                 return cacheEntry.cacheKey;
             }
+            core.info("4");
             archivePath = path.join(yield utils.createTempDirectory(), utils.getCacheFileName(compressionMethod));
             core.debug(`Archive Path: ${archivePath}`);
+            core.info("5");
             // Download the cache from the cache entry
             yield cacheHttpClient.downloadCache(cacheEntry.archiveLocation, archivePath, options);
+            core.info("6");
             if (core.isDebug()) {
                 yield (0, tar_1.listTar)(archivePath, compressionMethod);
             }
+            core.info("7");
             const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
             core.info(`Cache Size: ~${Math.round(archiveFileSize / (1024 * 1024))} MB (${archiveFileSize} B)`);
+            core.info("8");
             yield (0, tar_1.extractTar)(archivePath, compressionMethod);
             core.info("Cache restored successfully");
+            core.info("9");
             return cacheEntry.cacheKey;
         }
         catch (error) {
@@ -94058,6 +94067,7 @@ function restoreCache(paths, primaryKey, restoreKeys, options, enableCrossOsArch
             else {
                 // Supress all non-validation cache related errors because caching should be optional
                 core.warning(`Failed to restore: ${error.message}`);
+                throw error;
             }
         }
         finally {

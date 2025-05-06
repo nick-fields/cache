@@ -97,47 +97,51 @@ export async function restoreCache(
     let archivePath = "";
     try {
         // path are needed to compute version
+        core.info("1");
         const cacheEntry = await cacheHttpClient.getCacheEntry(keys, paths, {
             compressionMethod,
             enableCrossOsArchive
         });
+        core.info("2");
         if (!cacheEntry?.archiveLocation) {
             // Cache not found
             return undefined;
         }
 
+        core.info("3");
         if (options?.lookupOnly) {
             core.info("Lookup only - skipping download");
             return cacheEntry.cacheKey;
         }
 
+        core.info("4");
         archivePath = path.join(
             await utils.createTempDirectory(),
             utils.getCacheFileName(compressionMethod)
         );
         core.debug(`Archive Path: ${archivePath}`);
-
+        core.info("5");
         // Download the cache from the cache entry
         await cacheHttpClient.downloadCache(
             cacheEntry.archiveLocation,
             archivePath,
             options
         );
-
+        core.info("6");
         if (core.isDebug()) {
             await listTar(archivePath, compressionMethod);
         }
-
+        core.info("7");
         const archiveFileSize = utils.getArchiveFileSizeInBytes(archivePath);
         core.info(
             `Cache Size: ~${Math.round(
                 archiveFileSize / (1024 * 1024)
             )} MB (${archiveFileSize} B)`
         );
-
+        core.info("8");
         await extractTar(archivePath, compressionMethod);
         core.info("Cache restored successfully");
-
+        core.info("9");
         return cacheEntry.cacheKey;
     } catch (error) {
         const typedError = error as Error;
@@ -146,6 +150,7 @@ export async function restoreCache(
         } else {
             // Supress all non-validation cache related errors because caching should be optional
             core.warning(`Failed to restore: ${(error as Error).message}`);
+            throw error;
         }
     } finally {
         // Try to delete the archive to save space
