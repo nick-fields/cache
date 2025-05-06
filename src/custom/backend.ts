@@ -153,13 +153,16 @@ export async function downloadCache(
 
     const archiveUrl = new URL(archiveLocation);
     const objectKey = archiveUrl.pathname.slice(1);
+    core.info(`A: ${JSON.stringify({ archiveUrl, objectKey })}`);
     const command = new GetObjectCommand({
         Bucket: bucketName,
         Key: objectKey
     });
+    core.info(`B`);
     const url = await getSignedUrl(s3Client, command, {
         expiresIn: 3600
     });
+    core.info(`C`);
     await downloadCacheHttpClientConcurrent(url, archivePath, {
         ...options,
         downloadConcurrency: downloadQueueSize,

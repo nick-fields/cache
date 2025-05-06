@@ -161,6 +161,7 @@ export async function downloadCacheHttpClientConcurrent(
         keepAlive: true
     });
     try {
+        core.info("AA");
         const res = await retryHttpClientResponse(
             "downloadCacheMetadata",
             async () =>
@@ -168,29 +169,31 @@ export async function downloadCacheHttpClientConcurrent(
                     Range: "bytes=0-1"
                 })
         );
-
+        core.info("BB");
         const contentRange = res.message.headers["content-range"];
         if (!contentRange) {
             throw new Error("Range request not supported by server");
         }
+        core.info("CC");
         const match = contentRange?.match(/bytes \d+-\d+\/(\d+)/);
         if (!match) {
             throw new Error(
                 "Content-Range header in server response not in correct format"
             );
         }
+        core.info("DD");
         const length = parseInt(match[1]);
         if (Number.isNaN(length)) {
             throw new Error(`Could not interpret Content-Length: ${length}`);
         }
-
+        core.info("EE");
         const downloads: {
             offset: number;
             promiseGetter: () => Promise<DownloadSegment>;
         }[] = [];
 
         const blockSize = options.partSize;
-
+        core.info("FF");
         for (let offset = 0; offset < length; offset += blockSize) {
             const count = Math.min(blockSize, length - offset);
             downloads.push({
@@ -213,7 +216,7 @@ export async function downloadCacheHttpClientConcurrent(
         const progress = new DownloadProgress(length);
         progress.startDisplayTimer();
         const progressFn = progress.onProgress();
-
+        core.info("GG");
         const activeDownloads: { [offset: number]: Promise<DownloadSegment> } =
             [];
         let nextDownload:
@@ -233,7 +236,7 @@ export async function downloadCacheHttpClientConcurrent(
             bytesDownloaded += segment.count;
             progressFn({ loadedBytes: bytesDownloaded });
         };
-
+        core.info("HH");
         while ((nextDownload = downloads.pop())) {
             activeDownloads[nextDownload.offset] = nextDownload.promiseGetter();
             actives++;
@@ -242,12 +245,13 @@ export async function downloadCacheHttpClientConcurrent(
                 await waitAndWrite();
             }
         }
-
+        core.info("II");
         while (actives > 0) {
             await waitAndWrite();
         }
     } finally {
         httpClient.dispose();
+        core.info("JJ");
         await archiveDescriptor.close();
     }
 }
